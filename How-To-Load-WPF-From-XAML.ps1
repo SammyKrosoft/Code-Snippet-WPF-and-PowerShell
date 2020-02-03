@@ -12,10 +12,26 @@ Here-String pasted from XAML
 
 $inputXMLClean = $inputXML -replace 'mc:Ignorable="d"','' -replace "x:N",'N' -replace 'x:Class=".*?"','' -replace 'd:DesignHeight="\d*?"','' -replace 'd:DesignWidth="\d*?"',''
 [xml]$xaml = $inputXMLClean
+
+# Read the XAML code
 $reader = New-Object System.Xml.XmlNodeReader $xaml
 $tempform = [Windows.Markup.XamlReader]::Load($reader)
+
+# Populate the Hash table $wpf with the Names / Values pairs using the form control names
+# Form control objects will be available as $wpf.<Form control name> like $wpf.RunButton for example...
+# Adding an event like Click or MouseOver will be with $wpf.RunButton.addClick({Code})
 $namedNodes = $xaml.SelectNodes("//*[@*[contains(translate(name(.),'n','N'),'Name')]]")
 $namedNodes | ForEach-Object {$wpf.Add($_.Name, $tempform.FindName($_.Name))}
+
+# Seen another method where the developper creates variables for each control instead of using a hash table
+# $wpf {Key name, Value}, he uses Set-Variable "var_$($_.Name)" with value $TempForm.FindName($_.Name) instead of $HashTable.Add($_.Name,$tempForm.FindName($_.Name)):
+#
+#       $NamedNodes = $xaml.SelectNodes("//*[@Name]") 
+#       $NamedNodes | Foreach-Object {Set-Variable -Name "var_$($.Name)" -Value $tempform.FindName($_.Name) -ErrorAction Stop}
+#
+# that way, each control will be accessible with the variable name named $var_<control name> like $var_btnQuery
+# we would add events like Click or MouseOver using $var_btnQuery.addClick({Code})
+# more info there: https://adamtheautomator.com/build-powershell-gui/
 
 #Get the form name to be used as parameter in functions external to form...
 $FormName = $NamedNodes[0].Name
